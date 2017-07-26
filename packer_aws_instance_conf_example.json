@@ -1,0 +1,58 @@
+{
+  "variables": {
+    "ami_name": "",
+    "aws_access_key": "",
+    "aws_secret_key": "",
+    "user_name": "",
+    "test_ami_flag": "",
+    "ansible_playbooks_path": "",
+    "aws_cert_path": "",
+    "aws_key_path": "",
+    "source_ami_id": "",
+    "aws_account_id": "",
+    "aws_region": "",
+    "ami_instance_type": "",
+    "ami_description": "",
+    "playbook_file": "",
+    "s3_bucket_name": ""
+  },
+  "builders": [{
+    "type": "amazon-instance",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "account_id": "{{user `aws_account_id`}}",
+    "region": "{{user `aws_region`}}",
+    "source_ami": "{{user `source_ami_id`}}",
+    "instance_type": "{{user `ami_instance_type`}}",
+    "ssh_username": "ubuntu",
+    "ami_name": "{{isotime | clean_ami_name}} {{user `ami_name`}}",
+    "s3_bucket": "{{user `s3_bucket_name`}}",
+    "x509_cert_path": "{{user `aws_cert_path`}}",
+    "x509_key_path": "{{user `aws_key_path`}}",
+    "security_group_ids": [
+      "all",
+      "default"
+    ],
+    "tags": {
+      "author": "{{user `user_name`}}",
+      "packer": "true",
+      "test_ami": "{{user `test_ami_flag`}}"
+      },
+    "ami_description": "{{user `ami_description`}}",
+    "bundle_upload_command": "sudo -n ec2-upload-bundle -b {{.BucketName}} -m {{.ManifestPath}} -a {{.AccessKey}} -s {{.SecretKey}} -d {{.BundleDirectory}} --batch --retry"
+  }],
+  "provisioners": [
+    {
+    "type": "ansible-local",
+    "playbook_file": "{{user `playbook_file`}}",
+    "playbook_paths" : [
+    ],
+    "extra_arguments": "--extra-vars 'basedir=/tmp/packer-provisioner-ansible-local/playbooks/'",
+    "inventory_file": "inventories/packer",
+    "role_paths": [
+	"path to some role"
+      ],
+    "group_vars": "{{ user `ansible_playbooks_path` }}/projects/example-project/group_vars"
+  }
+  ]
+}

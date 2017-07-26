@@ -1,0 +1,64 @@
+{
+  "variables": {
+    "aws_access_key": "{{ env `AWS_ACCESS_KEY_ID` }}",
+    "aws_secret_key": "{{ env `AWS_SECRET_ACCESS_KEY` }}",
+    "aws_region": "ap-southeast-1",
+    "ssh_keypair_name": "aws_poc_singapore",
+    "ssh_private_key_file": "/Users/davidlu/.ssh/aws_poc_singapore.pem"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "{{user `aws_region`}}",
+    "instance_type": "t2.micro",
+    "associate_public_ip_address": "true",
+    "ssh_private_ip": "false",
+    "ssh_username": "centos",
+    "ssh_keypair_name": "{{user `ssh_keypair_name`}}",
+    "ssh_private_key_file": "{{user `ssh_private_key_file`}}",
+    "vpc_id": "vpc-5f619a3a",
+    "subnet_id": "subnet-150e0563",
+    "ami_name": "qrious_packer_centos_7_base_{{isotime | clean_ami_name}}",
+    "ami_groups": "all",
+    "launch_block_device_mappings": [
+      {
+        "device_name": "/dev/sda1",
+        "volume_size": 10,
+        "volume_type": "gp2",
+        "delete_on_termination": true
+      }
+    ],
+    "tags": {
+      "author": "Qrious",
+      "packer": "true",
+      "os": "CentOS",
+      "version": "7.3",
+      "release": "Latest"
+      },
+    "ami_description": "CentOS 7 with basic tools installed && disable SELinux",
+    "source_ami_filter": {
+            "filters": {
+                "name": "CentOS Linux 7 x86_64 HVM EBS*",
+                "virtualization-type": "hvm",
+                "root-device-type": "ebs"
+            },
+            "owners": ["410186602215"],
+            "most_recent": true
+    }
+  }],
+  "provisioners": [
+    {
+    "type": "shell",
+    "inline": [
+        "sudo yum update -y",
+        "sudo yum install epel-release -y",
+        "sudo yum install ntp vim telnet wget zip unzip python python-devel python-pip ansible -y",
+        "sudo pip install --upgrade pip",
+        "sudo sed -i -e \"s/^SELINUX=enforcing/SELINUX=disabled/g\" /etc/selinux/config",
+        "sudo service ntpd start",
+        "sudo ntpdate -u 0.amazon.pool.ntp.org"
+    ]
+  }
+  ]
+}
